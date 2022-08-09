@@ -1,1 +1,1 @@
-web: gunicorn -b :$PORT flaskapp:app
+web: gunicorn -b :$PORT app
