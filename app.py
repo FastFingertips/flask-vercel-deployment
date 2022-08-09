@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from secrets import choice
 from urllib import request
 import random
 import requests
@@ -19,12 +20,10 @@ class Film:
         self.name = name
         self.year = year
 
-
 @app.route("/")
 @app.route("/home")
 def home():
     return render_template('home.html')
-
 
 def get_posters(page):
     filmList = []
@@ -44,13 +43,37 @@ def get_posters(page):
             # print('filmList: '+name)
     return filmList
 
+# choose item in list
+def chooseRandomItem(liste):
+    itemNo = random.randint(0,len(liste)-1)
+    return itemNo
+
+# get last page number from page
+def getListLastPage(page):
+    pageDiscoveryList = page.soup.find_all('li', class_='paginate-page')
+    pageCount = pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text() # get last page
+    return int(pageCount)
+
+# build url
+def buildUrl(film_name):
+    return f'https://letterboxd.com/film/{strEncoder(film_name)}/'
+
+# encode film name
+def strEncoder(x):
+    x = x.replace(" ", "-")
+    for _ in [",",":","'","?","!","&"]: x = x.replace(_, "")
+    return x.lower()
+
+# choose a random film
+def chooseFilm(film_list, num):
+    film = film_list[num]
+    filmName = str(film.name)
+    return filmName
 
 @app.route("/handle_data", methods =['GET', 'POST'])
 def handle_data():
+
     if request.method == 'POST':
-        #OGurl = request.form.get("url")
-        #print(OGurl)
-        
         urls = []
         for key, val in request.form.items():
             if key.startswith("url"):
@@ -58,8 +81,7 @@ def handle_data():
                     urls.append(val)
 
         randomList = random.randint(0,len(urls)-1) # make random number
-        OGurl = urls[randomList] #choose random list
-        print("OGurl: "+OGurl)
+        listUrl = urls[randomList] #choose random list
 
         pageList = []
         filmList = []
@@ -84,40 +106,28 @@ def handle_data():
                 self.year = year
 
         # Find needed pages
-        firstPage = Page(OGurl, 1)
+        firstPage = Page(listUrl, 1)
         firstPage.Load()
         pageList.append(firstPage)
-        pageDiscoveryList = firstPage.soup.find_all('li', class_='paginate-page')
+        lastPage = getListLastPage(firstPage)
 
-        # If only 1 page exists
-        if len(pageDiscoveryList) == 0:
+        if lastPage == 0: # if there is only one page
             filmList = get_posters(pageList[0])
-        else:
-            # find last page number
-            pageCount = int(pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text())
-
-            # add range to search list
-            for pageNum in range(2, pageCount + 1):
-                pageTemp = Page(OGurl+ '/page/' + str(pageNum) + '/', str(pageNum))
+        else: # If more than 1 page exists
+            for pageNum in range(2, lastPage + 1): # add range to search list
+                pageTemp = Page(f'{listUrl}/page/{str(pageNum)}/', str(pageNum))
                 pageList.append(pageTemp)
 
             # choose a random page
-            randomPage = random.randint(0,len(pageList)-1) # make random number
-            filmList = get_posters(pageList[randomPage])
+            pageNo = chooseRandomItem(pageList)
+            filmList = get_posters(pageList[pageNo])
 
-            # find films on pages
-            #for i in range(0, len(pageList)):
-                #page = pageList[i]
-                # print('PAGE '+str(i))
-                #filmList = filmList + get_posters(page)
-            
-        randomNumber = random.randint(0,len(filmList)-1) # make random number
-        filmRandom = filmList[randomNumber]			     # variable 'films' is a random movie poster
-        filmsRandomString = str(filmRandom.name)
-        print('RANDOM CHOICE: '+filmsRandomString)
-        movieLinkString = filmsRandomString.replace(" ", "-")
-        movieLink = 'https://letterboxd.com/film/' + movieLinkString.lower().replace(",", "").replace(":", "").replace("'", "").replace("?", "").replace("!", "").replace("&", "") + '/'
-        return render_template('home.html', movieLink= movieLink, films = filmsRandomString)
+        filmNo = chooseRandomItem(filmList)
+        filmName = chooseFilm(filmList, filmNo)
+        filmLink = buildUrl(filmName)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        print(f'[{listUrl}]][{str(pageNo)}][{str(filmNo)}]: {filmName}')
+        return render_template('home.html', link= filmLink, name = filmName)
+
+if __name__ == '__main__': # if script is run directly
+    app.run(debug=True) # run app in debug mode

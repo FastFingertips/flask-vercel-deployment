@@ -7,14 +7,14 @@
 
 	$(document).ready(function(){
 		$('#loading').hide();
-  		$("button").click(function(){
-    		$("form").hide();
-    		$( "custom-block" ).replaceWith(result);
-  });
-});
+		$("button").click(function(){
+			$("form").hide();
+			$( "custom-block" ).replaceWith(result);
+		});
+	});
 </script>
 
-<p><b><a href="{{ movieLink }}" style="color: orange"><font face = "Verdana" size = "5">{{ films }}</font></a></b></p>
+<p><b><a href="{{ link }}" style="color: orange"><font face = "Verdana" size = "5">{{ name }}</font></a></b></p>
 
 
 {% endblock content%}

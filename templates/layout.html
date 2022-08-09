@@ -1,106 +1,97 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<!--JQUERY-->
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-	
-	<title>Random Movie Roulette</title>
-</head>
+	<head>
+		<!--JQUERY-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+		<link rel="icon" href="https://a.ltrbxd.com/logos/letterboxd-mac-icon.png">
+		<title>Random Movie Roulette</title>
+	</head>
 
-<!-- Header -->
-<body style="background-color: #202830; text-align:center">
-	<img src="https://a.ltrbxd.com/logos/letterboxd-logo-h-neg-rgb-1000px.png" width="450" height="90" alt="FLetterboxd">
-	<b><center><font color="white" face = "Verdana" size = "6">Random Movie Roulette</font></center></b>
+	<!-- Header -->
+	<body style="background-color: #202830; text-align:center">
+		<img src="https://a.ltrbxd.com/logos/letterboxd-logo-v-neg-rgb-1000px.png" width="500">
+		<b><center><font color="white" face = "Verdana" size = "6">Random Movie Roulette</font></center></b>
 
-<!-- Film chosen for you -->
-<custom-block>{% block content %}{% endblock %}</custom-block>
+		<!-- Film chosen for you -->
+		<custom-block>{% block content %}{% endblock %}</custom-block>
 
+		<!-- Forms -->
+		<form action="{{ url_for('handle_data') }}" method="POST">
+			<div id=row1 class="form-row">
+				<input type="text" size=100 name=url1 class="form-control" placeholder="List URL">
+				<a id=add_list href=# class="button">➕</a>
+			</div>
+			<p>
+				<button type="submit" class="btn btn-primary">
+					<b>Random!</b>
+				</button>
+			</p>
+		</form>
 
+		<!--javascript-->
+		<script type=text/javascript>
+			$(function() {
+				var x = 2;
+				$('a#add_list').bind('click', function() {
+					$("#row1").after("<div class='form-row' id='row"+x+"'><input type='text' size=100 name=url"+x+" style='width:588px;' class='form-control' placeholder='List URL'></div>");
+					x++;
+				});
 
+			});
+		</script>
 
-<!-- Forms -->
-<form action="{{ url_for('handle_data') }}" method="POST">
-<form>
-  <div id=row1 class="form-row">
-	    <input type="text" size=100 name=url1 class="form-control" placeholder="List URL">
-	    <a id=add_list href=# class="button">➕</a>
-  </div>
-  <p><button type="submit" class="btn btn-primary"><b>Random!</b></button></p>
-</form>
+		<!-- Form CSS -->
+		<style type='text/css'>
+			div {
+			margin-left: 50px;
+			margin-right: 50px;}
 
+			.btn {
+				height:30px;
+				width:120px;
+				background-color:#10b135;
+				-moz-border-radius:28px;
+				-webkit-border-radius:28px;
+				border-radius:28px;
+				cursor:pointer;
+				color:#ffffff;
+				font-family:Verdana;
+				font-size:17px;
+				text-decoration:none;}
 
+			.btn:hover {
+				background-color:#0b8e29;}
 
-<!--javascript-->
-<script type=text/javascript>
-	$(function() {
-		var x = 2;
-		$('a#add_list').bind('click', function() {
-			$("#row1").after("<div class='form-row' id='row"+x+"'><input type='text' size=100 name=url"+x+" style='width:588px;' class='form-control' placeholder='List URL'></div>");
-			x++;
-		});
+			.btn:active {
+				position:relative;
+				top:1px;}
 
-	});
-</script>
+			.button{
+				background: #00971b;
+				color: #e3eae0;
+				border-radius:3px;
+				cursor:pointer;
+				text-decoration: none;
+				box-sizing: border-box;
+				line-height: 13px;
+				padding-bottom: 8px;
+				padding-left: 8px;
+				padding-right: 8px;
+				padding-top: 8px;
+				font-family: Graphik-Semibold-Web,sans-serif;
+				font-size: 1rem;
+				font-weight: 400;
+				letter-spacing: .075em;}
 
-
-
-
-<!-- Form CSS -->
- <style type='text/css'>
-
-  div {
- margin-left: 50px;
- margin-right: 50px;
-}
-
-.btn {
-	height:30px;
-    width:120px;
-	background-color:#10b135;
-	-moz-border-radius:28px;
-	-webkit-border-radius:28px;
-	border-radius:28px;
-	cursor:pointer;
-	color:#ffffff;
-	font-family:Verdana;
-	font-size:17px;
-	text-decoration:none;
-}
-.btn:hover {
-	background-color:#0b8e29;
-}
-.btn:active {
-	position:relative;
-	top:1px;
-}
-
-.button{
-	background: #00971b;
-	color: #e3eae0;
-	border-radius:3px;
-	cursor:pointer;
-	text-decoration: none;
-	box-sizing: border-box;
-	line-height: 13px;
-	padding-bottom: 8px;
-	padding-left: 8px;
-	padding-right: 8px;
-	padding-top: 8px;
-	font-family: Graphik-Semibold-Web,sans-serif;
-	font-size: 1rem;
-	font-weight: 400;
-	letter-spacing: .075em;
-	
-}
-
-input[type=text] {
-  width: 550px;
-  padding: 12px 20px;
-  margin: 8px 0;
-  box-sizing: border-box;
-}
-
-</style>
-
-</body>
+			input[type=text] {
+				border-radius: 15px;
+				box-shadow: 0 1px 0 #414d5e;
+				color: #89a;
+				font-size: 1rem;
+				width: 550px;
+				padding: 12px 20px;
+				margin: 8px 0;
+				box-sizing: border-box;}
+		</style>
+	</body>
 </html>
