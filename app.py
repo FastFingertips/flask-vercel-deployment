@@ -61,7 +61,7 @@ def buildUrl(film_name):
 # encode film name
 def strEncoder(x):
     x = x.replace(" ", "-")
-    for _ in [",",":","'","?","!","&"]: x = x.replace(_, "")
+    for _ in [".",",",":","'","?","!","&"]: x = x.replace(_, "")
     return x.lower()
 
 # choose a random film
