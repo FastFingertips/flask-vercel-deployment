@@ -32,10 +32,11 @@ def getPosters(page): # get posters from page
 def chooseRandomItemNo(items): return random.randint(0,len(items)-1)
 
 def getListLastPageNo(listObject): # get last page number from dom
-    pageDiscoveryList = listObject.soup.find_all('li', class_='paginate-page')
-    pageCount = 0
-    try: pageCount = int(pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text())
-    except IndexError as e:
+    pageCount = 1
+    try: # try li tag
+        pageDiscoveryList = listObject.soup.find_all('li', class_='paginate-page')
+        pageCount = int(pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text())
+    except IndexError as e: # try meta tag
         print(e)
         try:
             metaDescription = listObject.soup.find('meta', attrs={'name':'description'}).attrs['content']
@@ -44,8 +45,7 @@ def getListLastPageNo(listObject): # get last page number from dom
             if filmCounts > 100: pageCount = int(pageCount/100) + (0 if pageCount % 100 == 0 else 1)
         except Exception as e: print(e)
     except Exception as e: print(e)
-    if pageCount: return pageCount
-    else: exit()
+    return pageCount
 
 def strEncoder(x): # encode string for url
     x = x.replace(" ", "-")
