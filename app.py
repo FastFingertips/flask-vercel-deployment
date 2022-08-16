@@ -1,17 +1,9 @@
 #!/usr/bin/env python
-from secrets import choice
 from urllib import request
 import random
 import requests
-import urllib
-import time
-from datetime import date
-import sys
-import re
-import json
-from flask_wtf import FlaskForm
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
@@ -51,7 +43,11 @@ def chooseRandomItem(liste):
 # get last page number from page
 def getListLastPage(page):
     pageDiscoveryList = page.soup.find_all('li', class_='paginate-page')
-    pageCount = pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text() # get last page
+    try: pageCount = pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text() # get last page
+    except IndexError: pageCount = 1
+    except Exception as e:
+        print(e)
+        exit()
     return int(pageCount)
 
 # build url
