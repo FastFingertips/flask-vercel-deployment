@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from urllib import request
 import random
 import requests
 from bs4 import BeautifulSoup
@@ -24,7 +23,7 @@ def get_posters(page):
     # read posters
     posterContainer = page.soup.find(class_='poster-list')
     if posterContainer:
-    #<img alt="John Wick: Chapter 2" class="image" height="105" src="https://s1.ltrbxd.com/static/img/empty-poster-70.84a.png" width="70"/>
+    # <img alt="John Wick: Chapter 2" class="image" height="105" src="https://s1.ltrbxd.com/static/img/empty-poster-70.84a.png" width="70"/>
         nameList = posterContainer.find_all('img')
         for film in range(0, len(nameList)):
             nameEntry = nameList[film]
@@ -32,7 +31,6 @@ def get_posters(page):
             name.encode('utf8')
             year = page.year;
             filmList.append(Film(name, year))
-            # print('filmList: '+name)
     return filmList
 
 # choose item in list
@@ -50,15 +48,15 @@ def getListLastPage(page):
         exit()
     return int(pageCount)
 
-# build url
-def buildUrl(film_name):
-    return f'https://letterboxd.com/film/{strEncoder(film_name)}/'
-
 # encode film name
 def strEncoder(x):
     x = x.replace(" ", "-")
     for _ in [".",",",":","'","?","!","&"]: x = x.replace(_, "")
     return x.lower()
+
+# build url
+def buildUrl(film_name):
+    return f'https://letterboxd.com/film/{strEncoder(film_name)}/'
 
 # choose a random film
 def chooseFilm(film_list, num):
@@ -70,14 +68,14 @@ def chooseFilm(film_list, num):
 def handle_data():
 
     if request.method == 'POST':
-        urls = []
+        listUrls = []
         for key, val in request.form.items():
             if key.startswith("url"):
-                if val:
-                    urls.append(val)
+                if val: listUrls.append(val)
 
-        randomList = random.randint(0,len(urls)-1) # make random number
-        listUrl = urls[randomList] #choose random list
+        
+        randomListNumber = random.randint(0,len(listUrls)-1) # make random number
+        listUrl = listUrls[randomListNumber] #choose random list
 
         pageList = []
         filmList = []
@@ -106,10 +104,12 @@ def handle_data():
         firstPage.Load()
         pageList.append(firstPage)
         lastPage = getListLastPage(firstPage)
-
-        if lastPage == 0: # if there is only one page
+        print(lastPage)
+        if lastPage == 1: # if there is only one page
+            pageNo = 1
             filmList = get_posters(pageList[0])
         else: # If more than 1 page exists
+            print("more than 1 page")
             for pageNum in range(2, lastPage + 1): # add range to search list
                 pageTemp = Page(f'{listUrl}/page/{str(pageNum)}/', str(pageNum))
                 pageList.append(pageTemp)
