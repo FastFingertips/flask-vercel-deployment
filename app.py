@@ -13,18 +13,14 @@ class Film:
 
 @app.route("/")
 @app.route("/home")
-def home():
-    return render_template('home.html')
+def home(): return render_template('home.html')
 
-def get_posters(page):
-    filmList = []
-    if page.ready == False:
-        page.Load();
-    # read posters
-    posterContainer = page.soup.find(class_='poster-list')
-    if posterContainer:
-    # <img alt="John Wick: Chapter 2" class="image" height="105" src="https://s1.ltrbxd.com/static/img/empty-poster-70.84a.png" width="70"/>
+def getPosters(page): # get posters from page
+    if page.ready == False: page.Load() # load page if not loaded
+    posterContainer = page.soup.find(class_='poster-list') # read posters
+    if posterContainer: # <img alt="John Wick: Chapter 4" class="image">
         nameList = posterContainer.find_all('img')
+        filmList = []
         for film in range(0, len(nameList)):
             nameEntry = nameList[film]
             name = nameEntry.get('alt')
@@ -33,14 +29,10 @@ def get_posters(page):
             filmList.append(Film(name, year))
     return filmList
 
-# choose item in list
-def chooseRandomItem(liste):
-    itemNo = random.randint(0,len(liste)-1)
-    return itemNo
+def chooseRandomItemNo(items): return random.randint(0,len(items)-1)
 
-# get last page number from page
-def getListLastPage(page):
-    pageDiscoveryList = page.soup.find_all('li', class_='paginate-page')
+def getListLastPageNo(listObject): # get last page number from dom
+    pageDiscoveryList = listObject.soup.find_all('li', class_='paginate-page')
     try: pageCount = pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text() # get last page
     except IndexError: pageCount = 1
     except Exception as e:
@@ -48,37 +40,25 @@ def getListLastPage(page):
         exit()
     return int(pageCount)
 
-# encode film name
-def strEncoder(x):
+def strEncoder(x): # encode string for url
     x = x.replace(" ", "-")
     for _ in [".",",",":","'","?","!","&"]: x = x.replace(_, "")
     return x.lower()
 
-# build url
-def buildUrl(film_name):
-    return f'https://letterboxd.com/film/{strEncoder(film_name)}/'
+def buildUrl(film_name): return f'https://letterboxd.com/film/{strEncoder(film_name)}/'
 
-# choose a random film
-def chooseFilm(film_list, num):
-    film = film_list[num]
-    filmName = str(film.name)
-    return filmName
+def chooseItem(itemList, itemNo): # choose a random film
+    item = itemList[itemNo]
+    itemName = str(item.name)
+    return itemName
 
 @app.route("/handle_data", methods =['GET', 'POST'])
 def handle_data():
-
     if request.method == 'POST':
         listUrls = []
         for key, val in request.form.items():
             if key.startswith("url"):
                 if val: listUrls.append(val)
-
-        
-        randomListNumber = random.randint(0,len(listUrls)-1) # make random number
-        listUrl = listUrls[randomListNumber] #choose random list
-
-        pageList = []
-        filmList = []
 
         class Page():
             def __init__(self, url, num):
@@ -99,27 +79,27 @@ def handle_data():
                 self.rating = rating
                 self.year = year
 
-        # Find needed pages
+        listUrl = listUrls[chooseRandomItemNo(listUrls)]
         firstPage = Page(listUrl, 1)
         firstPage.Load()
+
+        pageList, filmList = [], []
         pageList.append(firstPage)
-        lastPage = getListLastPage(firstPage)
-        print(lastPage)
-        if lastPage == 1: # if there is only one page
-            pageNo = 1
-            filmList = get_posters(pageList[0])
-        else: # If more than 1 page exists
-            print("more than 1 page")
-            for pageNum in range(2, lastPage + 1): # add range to search list
-                pageTemp = Page(f'{listUrl}/page/{str(pageNum)}/', str(pageNum))
+        lastPage = getListLastPageNo(firstPage) # get last page from first page
+
+        if lastPage == 1: # if only one page
+            pageNo = lastPage
+            filmList = getPosters(pageList[0])
+        else: # if there is more than one page
+            for pageNum in range(2, lastPage + 1): # 2 to last page
+                pageTemp = Page(f'{listUrl}/page/{str(pageNum)}/', pageNum)
                 pageList.append(pageTemp)
 
-            # choose a random page
-            pageNo = chooseRandomItem(pageList)
-            filmList = get_posters(pageList[pageNo])
+            pageNo = chooseRandomItemNo(pageList) # choose random page
+            filmList = getPosters(pageList[pageNo]) # get posters from page
 
-        filmNo = chooseRandomItem(filmList)
-        filmName = chooseFilm(filmList, filmNo)
+        filmNo = chooseRandomItemNo(filmList)
+        filmName = chooseItem(filmList, filmNo)
         filmLink = buildUrl(filmName)
 
         print(f'[{listUrl}]][{str(pageNo)}][{str(filmNo)}]: {filmName}')
