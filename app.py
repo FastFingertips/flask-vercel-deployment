@@ -33,12 +33,19 @@ def chooseRandomItemNo(items): return random.randint(0,len(items)-1)
 
 def getListLastPageNo(listObject): # get last page number from dom
     pageDiscoveryList = listObject.soup.find_all('li', class_='paginate-page')
-    try: pageCount = pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text() # get last page
-    except IndexError: pageCount = 1
-    except Exception as e:
+    pageCount = 0
+    try: pageCount = int(pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text())
+    except IndexError as e:
         print(e)
-        exit()
-    return int(pageCount)
+        try:
+            metaDescription = listObject.soup.find('meta', attrs={'name':'description'}).attrs['content']
+            filmCounts = int(metaDescription[metaDescription.find('A list of')+9:metaDescription.find('films')].strip().replace(',',''))
+            if filmCounts < 101: pageCount = 1
+            if filmCounts > 100: pageCount = int(pageCount/100) + (0 if pageCount % 100 == 0 else 1)
+        except Exception as e: print(e)
+    except Exception as e: print(e)
+    if pageCount: return pageCount
+    else: exit()
 
 def strEncoder(x): # encode string for url
     x = x.replace(" ", "-")
