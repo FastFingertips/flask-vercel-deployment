@@ -3,13 +3,14 @@ import random
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, render_template, request
+import json
 
 app = Flask(__name__)
 
 class Film:
-    def __init__(self, name, year):
+    def __init__(self, name, url):
         self.name = name
-        self.year = year
+        self.url = url
 
 @app.route("/")
 @app.route("/home")
@@ -19,14 +20,14 @@ def getPosters(page): # get posters from page
     if page.ready == False: page.Load() # load page if not loaded
     posterContainer = page.soup.find(class_='poster-list') # read posters
     if posterContainer: # <img alt="John Wick: Chapter 4" class="image">
-        nameList = posterContainer.find_all('img')
+        posterImgs = posterContainer.find_all('img')
+        posterDivs = posterContainer.find_all('div')
         filmList = []
-        for film in range(0, len(nameList)):
-            nameEntry = nameList[film]
-            name = nameEntry.get('alt')
-            name.encode('utf8')
-            year = page.year;
-            filmList.append(Film(name, year))
+        for filmNo in range(len(posterImgs)):
+            name = posterImgs[filmNo].attrs['alt']
+            name.encode('utf-8')
+            url = posterDivs[filmNo].attrs['data-target-link']
+            filmList.append(Film(name, url))
     return filmList
 
 def chooseRandomItemNo(items): return random.randint(0,len(items)-1)
@@ -47,17 +48,11 @@ def getListLastPageNo(listObject): # get last page number from dom
     except Exception as e: print(e)
     return pageCount
 
-def strEncoder(x): # encode string for url
-    x = x.replace(" ", "-")
-    for _ in [".",",",":","'","?","!","&"]: x = x.replace(_, "")
-    return x.lower()
-
-def buildUrl(film_name): return f'https://letterboxd.com/film/{strEncoder(film_name)}/'
+def buildUrl(v): return f'https://letterboxd.com{v}'
 
 def chooseItem(itemList, itemNo): # choose a random film
     item = itemList[itemNo]
-    itemName = str(item.name)
-    return itemName
+    return item
 
 @app.route("/handle_data", methods =['GET', 'POST'])
 def handle_data():
@@ -80,12 +75,6 @@ def handle_data():
                 self.soup = BeautifulSoup(self.page.text,'html.parser')
                 self.ready = True
 
-        class Film():
-            def __init__(self, name, rating, year):
-                self.name = name
-                self.rating = rating
-                self.year = year
-
         listUrl = listUrls[chooseRandomItemNo(listUrls)]
         firstPage = Page(listUrl, 1)
         firstPage.Load()
@@ -106,8 +95,8 @@ def handle_data():
             filmList = getPosters(pageList[pageNo]) # get posters from page
 
         filmNo = chooseRandomItemNo(filmList)
-        filmName = chooseItem(filmList, filmNo)
-        filmLink = buildUrl(filmName)
+        film = chooseItem(filmList, filmNo)
+        filmName,filmLink  = film.name, buildUrl(film.url)
 
         print(f'[{listUrl}]][{str(pageNo)}][{str(filmNo)}]: {filmName}')
         return render_template('home.html', link= filmLink, name = filmName)
