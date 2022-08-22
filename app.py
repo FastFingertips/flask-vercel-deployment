@@ -3,7 +3,6 @@ import random
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, render_template, request
-import json
 
 app = Flask(__name__)
 
@@ -38,14 +37,10 @@ def getListLastPageNo(listObject): # get last page number from dom
         pageDiscoveryList = listObject.soup.find_all('li', class_='paginate-page')
         pageCount = int(pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text())
     except IndexError as e: # try meta tag
-        print(e)
-        try:
-            metaDescription = listObject.soup.find('meta', attrs={'name':'description'}).attrs['content']
-            filmCounts = int(metaDescription[metaDescription.find('A list of')+9:metaDescription.find('films')].strip().replace(',',''))
-            if filmCounts < 101: pageCount = 1
-            if filmCounts > 100: pageCount = int(pageCount/100) + (0 if pageCount % 100 == 0 else 1)
-        except Exception as e: print(e)
-    except Exception as e: print(e)
+        metaDescription = listObject.soup.find('meta', attrs={'name':'description'}).attrs['content']
+        filmCounts = int(metaDescription[metaDescription.find('A list of')+9:metaDescription.find('films')].strip().replace(',',''))
+        if filmCounts < 101: pageCount = 1
+        if filmCounts > 100: pageCount = int(pageCount/100) + (0 if pageCount % 100 == 0 else 1)
     return pageCount
 
 def buildUrl(v): return f'https://letterboxd.com{v}'
@@ -68,7 +63,6 @@ def handle_data():
                 self.num = num
                 self.page = None
                 self.soup = None
-                self.year = 0
                 self.ready = False
             def Load(self):
                 self.page = requests.get(self.url)
@@ -96,7 +90,7 @@ def handle_data():
 
         filmNo = chooseRandomItemNo(filmList)
         film = chooseItem(filmList, filmNo)
-        filmName,filmLink  = film.name, buildUrl(film.url)
+        filmName, filmLink = film.name, buildUrl(film.url)
 
         print(f'[{listUrl}]][{str(pageNo)}][{str(filmNo)}]: {filmName}')
         return render_template('home.html', link= filmLink, name = filmName)
