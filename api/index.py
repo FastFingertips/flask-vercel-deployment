@@ -53,9 +53,33 @@ def chooseItem(itemList, itemNo): # choose a random film
 def handle_data():
     if request.method == 'POST':
         listUrls = []
+
         for key, val in request.form.items():
-            if key.startswith("url"):
+            if key.startswith("url"): # url1: https://letterboxd.com/
                 if val: listUrls.append(val)
+
+
+        exampleUrl = 'https://letterboxd.com/username/list/list-name/'
+        exampleUrlMsg = f'Example list url: {exampleUrl}'
+
+        if not listUrls: # is at least one url provided
+            return render_template('home.html',
+                warn_msg = 'An url list is required.',
+                info_msg = exampleUrlMsg)
+           
+        else: # does the url belong to letterboxd.com
+            for listUrl in listUrls:
+                if not listUrl.startswith('https://letterboxd.com/'):
+                    if "list" in listUrl:
+                        return render_template(
+                            'home.html',
+                            err_msg = f'The url is not letterboxd.com: {listUrl}',
+                            info_msg = exampleUrlMsg)
+                    else:
+                        return render_template(
+                            'home.html',
+                            err_msg = f'The url is letterboxd.com but not a list url: {listUrl}',
+                            info_msg = exampleUrlMsg)
 
         class Page():
             def __init__(self, url, num):
@@ -72,6 +96,11 @@ def handle_data():
         listUrl = listUrls[chooseRandomItemNo(listUrls)]
         firstPage = Page(listUrl, 1)
         firstPage.Load()
+
+        # site maintenance check
+        if firstPage.soup.find('body', class_='error'): 
+            site_msg = firstPage.soup.find('section', class_='message').p.get_text()
+            return render_template('home.html', err_msg = site_msg)
 
         pageList, filmList = [], []
         pageList.append(firstPage)
