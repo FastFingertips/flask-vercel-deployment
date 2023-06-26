@@ -29,7 +29,8 @@ def getPosters(page): # get posters from page
             filmList.append(Film(name, url))
     return filmList
 
-def chooseRandomItemNo(items): return random.randint(0,len(items)-1)
+def chooseRandomItemNo(items): 
+    return random.randint(0,len(items)-1)
 
 def getListLastPageNo(listObject): # get last page number from dom
     pageCount = 1
@@ -43,32 +44,29 @@ def getListLastPageNo(listObject): # get last page number from dom
         if filmCounts > 100: pageCount = int(pageCount/100) + (0 if pageCount % 100 == 0 else 1)
     return pageCount
 
-def buildUrl(v): return f'https://letterboxd.com{v}'
-
-def chooseItem(itemList, itemNo): # choose a random film
-    item = itemList[itemNo]
-    return item
-
-@app.route("/handle_data", methods =['GET', 'POST'])
+@app.route("/handle_data", methods=['POST'])
 def handle_data():
     if request.method == 'POST':
-        listUrls = []
+        userFormUrls = []
 
         for key, val in request.form.items():
             if key.startswith("url"): # url1: https://letterboxd.com/
-                if val: listUrls.append(val)
-
+                if val: 
+                    if not val in userFormUrls:
+                        userFormUrls.append(val)
+                    else: print(f"Duplicate url: {key} -> {val}")
+                else: print(f"Empty url: {key} -> {val}")
 
         exampleUrl = 'https://letterboxd.com/username/list/list-name/'
         exampleUrlMsg = f'Example list url: {exampleUrl}'
 
-        if not listUrls: # is at least one url provided
+        if not userFormUrls: # is at least one url provided
             return render_template('home.html',
                 warn_msg = 'An url list is required.',
                 info_msg = exampleUrlMsg)
            
         else: # does the url belong to letterboxd.com
-            for listUrl in listUrls:
+            for listUrl in userFormUrls:
                 if not listUrl.startswith('https://letterboxd.com/'):
                     if "list" in listUrl:
                         return render_template(
@@ -93,7 +91,7 @@ def handle_data():
                 self.soup = BeautifulSoup(self.page.text,'html.parser')
                 self.ready = True
 
-        listUrl = listUrls[chooseRandomItemNo(listUrls)]
+        listUrl = userFormUrls[chooseRandomItemNo(userFormUrls)]
         firstPage = Page(listUrl, 1)
         firstPage.Load()
 
@@ -102,27 +100,37 @@ def handle_data():
             site_msg = firstPage.soup.find('section', class_='message').p.get_text()
             return render_template('home.html', err_msg = site_msg)
 
-        pageList, filmList = [], []
-        pageList.append(firstPage)
-        lastPage = getListLastPageNo(firstPage) # get last page from first page
+        listLastPage = getListLastPageNo(firstPage) # get last page from first page
+        listPages =  []
+        pageListLen = len(listPages)
 
-        if lastPage == 1: # if only one page
-            pageNo = lastPage
-            filmList = getPosters(pageList[0])
-        else: # if there is more than one page
-            for pageNum in range(2, lastPage + 1): # 2 to last page
-                pageTemp = Page(f'{listUrl}/page/{str(pageNum)}/', pageNum)
-                pageList.append(pageTemp)
+        for current_page_no in range(1 + pageListLen, listLastPage + 1):
+            current_page_url = f'{listUrl}/page/{str(current_page_no)}/' # create page url
+            current_page = Page(current_page_url, current_page_no) # create page object
+            listPages.append(current_page) # add page object to list
 
-            pageNo = chooseRandomItemNo(pageList) # choose random page
-            filmList = getPosters(pageList[pageNo]) # get posters from page
+        randomlySelectedListPageNo = chooseRandomItemNo(listPages) # randomly selected list number from all pages
+        randomlySelectedPage = listPages[randomlySelectedListPageNo] # randomly selected page object
+        movieList = []
+        movieList = getPosters(randomlySelectedPage) # get posters from randomly selected page
 
-        filmNo = chooseRandomItemNo(filmList)
-        film = chooseItem(filmList, filmNo)
-        filmName, filmLink = film.name, buildUrl(film.url)
+        randomlySelectedListMovieNo = chooseRandomItemNo(movieList)
+        movie = movieList[randomlySelectedListMovieNo]
+        movieName, movieUrl = movie.name, f'https://letterboxd.com{movie.url}'
 
-        print(f'[{listUrl}]][{str(pageNo)}][{str(filmNo)}]: {filmName}')
-        return render_template('home.html', link= filmLink, name = filmName)
+        print(f'[{listUrl}] -> [{randomlySelectedListPageNo}][{randomlySelectedListMovieNo}]: {movieName}')
+
+        page_plural = 'page' if listLastPage == 1 else 'pages' # plural of page
+        movie_ordinal = f'{randomlySelectedListMovieNo+1}th' if randomlySelectedListMovieNo else f'first' # ordinal number of movie in list
+        link_text =     f'{randomlySelectedListPageNo+1}th page.' if randomlySelectedListPageNo else 'the first page.' # ordinal number of page in list
+        movie_info = f'In the list of {listLastPage} {page_plural}, we selected the {movie_ordinal} movie from '
+
+        return render_template('home.html',
+                        link=movieUrl,
+                        name=movieName,
+                        movie_info=movie_info,
+                        list_page_url=randomlySelectedPage.url,
+                        link_text=link_text)
 
 if __name__ == '__main__': # if script is run directly
     app.run(debug=True) # run app in debug mode
