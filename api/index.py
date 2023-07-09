@@ -13,20 +13,26 @@ class Film:
 
 @app.route("/")
 @app.route("/home")
-def home(): return render_template('home.html')
+def home(): 
+    return render_template('home.html')
 
-def getPosters(page): # get posters from page
-    if page.ready == False: page.Load() # load page if not loaded
-    posterContainer = page.soup.find(class_='poster-list') # read posters
+def getPosters(pageObject) -> list: # get posters from page
+    if pageObject.ready == False: 
+        pageObject.Load() # load page if not loaded
+
+    filmList = []
+    posterContainer = pageObject.soup.find(class_='poster-list') # read posters
+    # posterContainer: <ul class="js-list-entries poster-list -p125 -grid film-list">
     if posterContainer: # <img alt="John Wick: Chapter 4" class="image">
         posterImgs = posterContainer.find_all('img')
         posterDivs = posterContainer.find_all('div')
-        filmList = []
+
         for filmNo in range(len(posterImgs)):
             name = posterImgs[filmNo].attrs['alt']
-            name.encode('utf-8')
+            name.encode('utf-8') # encode name to utf-8
             url = posterDivs[filmNo].attrs['data-target-link']
             filmList.append(Film(name, url))
+
     return filmList
 
 def chooseRandomItemNo(items): 
