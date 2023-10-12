@@ -1,8 +1,13 @@
 #!/usr/bin/env python
-import random
-import requests
+from flask import (
+    Flask,
+    render_template,
+    request
+)
+
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request
+import requests
+import random
 
 app = Flask(__name__)
 
@@ -10,6 +15,18 @@ class Film:
     def __init__(self, name, url):
         self.name = name
         self.url = url
+
+class Page():
+    def __init__(self, url, num):
+        self.url = url
+        self.num = num
+        self.page = None
+        self.soup = None
+        self.ready = False
+    def Load(self):
+        self.page = requests.get(self.url)
+        self.soup = BeautifulSoup(self.page.text,'html.parser')
+        self.ready = True
 
 @app.route("/")
 @app.route("/home")
@@ -50,7 +67,7 @@ def getListLastPageNo(listObject): # get last page number from dom
         if filmCounts > 100: pageCount = int(pageCount/100) + (0 if pageCount % 100 == 0 else 1)
     return pageCount
 
-@app.route("/handle_data", methods=['POST'])
+@app.route("/handle_data", methods=['POST', 'GET'])
 def handle_data():
     if request.method == 'POST':
         userFormUrls = []
@@ -65,37 +82,34 @@ def handle_data():
 
         exampleUrl = 'https://letterboxd.com/username/list/list-name/'
         exampleUrlMsg = f'Example list url: {exampleUrl}'
+        context = {
+            'info_msg': exampleUrlMsg,}
 
         if not userFormUrls: # is at least one url provided
-            return render_template('home.html',
-                warn_msg = 'An url list is required.',
-                info_msg = exampleUrlMsg)
+            context |= {
+                'warn_msg': 'An url list is required.',}
+
+            return render_template('home.html', **context)
            
         else: # does the url belong to letterboxd.com
             for listUrl in userFormUrls:
                 if not listUrl.startswith('https://letterboxd.com/'):
-                    if "list" in listUrl:
-                        return render_template(
-                            'home.html',
-                            err_msg = f'The url is not letterboxd.com: {listUrl}',
-                            info_msg = exampleUrlMsg)
-                    else:
-                        return render_template(
-                            'home.html',
-                            err_msg = f'The url is letterboxd.com but not a list url: {listUrl}',
-                            info_msg = exampleUrlMsg)
+                    err_msg = f'The url is not letterboxd.com: {listUrl}'
 
-        class Page():
-            def __init__(self, url, num):
-                self.url = url
-                self.num = num
-                self.page = None
-                self.soup = None
-                self.ready = False
-            def Load(self):
-                self.page = requests.get(self.url)
-                self.soup = BeautifulSoup(self.page.text,'html.parser')
-                self.ready = True
+                    context |= {
+                        'err_msg': err_msg}
+
+                    return render_template('home.html', **context)
+                else:
+                    if "list" not in listUrl:
+                        err_msg = f'The url is letterboxd.com but not a list url: {listUrl}'
+
+                        context |= {
+                            'err_msg': err_msg}
+
+                        return render_template('home.html', **context)
+            else: # all urls are valid
+                pass
 
         listUrl = userFormUrls[chooseRandomItemNo(userFormUrls)]
         firstPage = Page(listUrl, 1)
@@ -104,7 +118,11 @@ def handle_data():
         # site maintenance check
         if firstPage.soup.find('body', class_='error'): 
             site_msg = firstPage.soup.find('section', class_='message').p.get_text()
-            return render_template('home.html', err_msg = site_msg)
+
+            context = {
+                'err_msg': site_msg}
+
+            return render_template('home.html', **context)
 
         listLastPage = getListLastPageNo(firstPage) # get last page from first page
         listPages =  []
@@ -131,12 +149,16 @@ def handle_data():
         link_text =     f'{randomlySelectedListPageNo+1}th page.' if randomlySelectedListPageNo else 'the first page.' # ordinal number of page in list
         movie_info = f'In the list of {listLastPage} {page_plural}, we selected the {movie_ordinal} movie from '
 
-        return render_template('home.html',
-                        link=movieUrl,
-                        name=movieName,
-                        movie_info=movie_info,
-                        list_page_url=randomlySelectedPage.url,
-                        link_text=link_text)
-
+        context = {
+            'link': movieUrl,
+            'name': movieName,
+            'movie_info': movie_info,
+            'list_page_url': randomlySelectedPage.url,
+            'link_text': link_text}
+        
+    else:
+        context = {
+            'err_msg': 'The request method is not POST.'}
+    return render_template('home.html', **context)
 if __name__ == '__main__': # if script is run directly
     app.run(debug=True) # run app in debug mode
