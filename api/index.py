@@ -34,7 +34,7 @@ def home():
     return render_template('home.html')
 
 def getPosters(pageObject) -> list: # get posters from page
-    if pageObject.ready == False: 
+    if pageObject.ready is False: 
         pageObject.Load() # load page if not loaded
 
     filmList = []
@@ -57,14 +57,19 @@ def chooseRandomItemNo(items):
 
 def getListLastPageNo(listObject): # get last page number from dom
     pageCount = 1
-    try: # try li tag
+    try:
+        # try li tag
         pageDiscoveryList = listObject.soup.find_all('li', class_='paginate-page')
         pageCount = int(pageDiscoveryList[len(pageDiscoveryList)-1].a.get_text())
-    except IndexError as e: # try meta tag
+    except IndexError:
+        # try meta tag
         metaDescription = listObject.soup.find('meta', attrs={'name':'description'}).attrs['content']
-        filmCounts = int(metaDescription[metaDescription.find('A list of')+9:metaDescription.find('films')].strip().replace(',',''))
-        if filmCounts < 101: pageCount = 1
-        if filmCounts > 100: pageCount = int(pageCount/100) + (0 if pageCount % 100 == 0 else 1)
+        filmCounts = int(metaDescription[metaDescription.find('A list of')+9:
+                                         metaDescription.find('films')].strip().replace(',',''))
+        if filmCounts < 101:
+            pageCount = 1
+        if filmCounts > 100:
+            pageCount = int(pageCount/100) + (0 if pageCount % 100 == 0 else 1)
     return pageCount
 
 @app.route("/handle_data", methods=['POST', 'GET'])
@@ -75,19 +80,19 @@ def handle_data():
         for key, val in request.form.items():
             if key.startswith("url"): # url1: https://letterboxd.com/
                 if val: 
-                    if not val in userFormUrls:
+                    if val not in userFormUrls:
                         userFormUrls.append(val)
-                    else: print(f"Duplicate url: {key} -> {val}")
-                else: print(f"Empty url: {key} -> {val}")
+                    else:
+                        print(f"Duplicate url: {key} -> {val}")
+                else:
+                    print(f"Empty url: {key} -> {val}")
 
         exampleUrl = 'https://letterboxd.com/username/list/list-name/'
         exampleUrlMsg = f'Example list url: {exampleUrl}'
-        context = {
-            'info_msg': exampleUrlMsg,}
+        context = {'info_msg': exampleUrlMsg,}
 
         if not userFormUrls: # is at least one url provided
-            context |= {
-                'warn_msg': 'An url list is required.',}
+            context |= {'warn_msg': 'An url list is required.',}
 
             return render_template('home.html', **context)
            
@@ -95,18 +100,12 @@ def handle_data():
             for listUrl in userFormUrls:
                 if not listUrl.startswith('https://letterboxd.com/'):
                     err_msg = f'The url is not letterboxd.com: {listUrl}'
-
-                    context |= {
-                        'err_msg': err_msg}
-
+                    context |= {'err_msg': err_msg}
                     return render_template('home.html', **context)
                 else:
                     if "list" not in listUrl:
                         err_msg = f'The url is letterboxd.com but not a list url: {listUrl}'
-
-                        context |= {
-                            'err_msg': err_msg}
-
+                        context |= {'err_msg': err_msg}
                         return render_template('home.html', **context)
             else: # all urls are valid
                 pass
@@ -118,10 +117,7 @@ def handle_data():
         # site maintenance check
         if firstPage.soup.find('body', class_='error'): 
             site_msg = firstPage.soup.find('section', class_='message').p.get_text()
-
-            context = {
-                'err_msg': site_msg}
-
+            context = {'err_msg': site_msg}
             return render_template('home.html', **context)
 
         listLastPage = getListLastPageNo(firstPage) # get last page from first page
@@ -140,13 +136,15 @@ def handle_data():
 
         randomlySelectedListMovieNo = chooseRandomItemNo(movieList)
         movie = movieList[randomlySelectedListMovieNo]
-        movieName, movieUrl = movie.name, f'https://letterboxd.com{movie.url}'
+        movieName, movieUrl = movie.name, 'https://letterboxd.com' + movie.url
 
         print(f'[{listUrl}] -> [{randomlySelectedListPageNo}][{randomlySelectedListMovieNo}]: {movieName}')
 
-        page_plural = 'page' if listLastPage == 1 else 'pages' # plural of page
-        movie_ordinal = f'{randomlySelectedListMovieNo+1}th' if randomlySelectedListMovieNo else f'first' # ordinal number of movie in list
-        link_text =     f'{randomlySelectedListPageNo+1}th page.' if randomlySelectedListPageNo else 'the first page.' # ordinal number of page in list
+        page_plural = 'page' if listLastPage == 1 else 'pages'
+        # ordinal number of movie in list
+        movie_ordinal = f'{randomlySelectedListMovieNo+1}th' if randomlySelectedListMovieNo else 'first'
+        # ordinal number of page in list
+        link_text =     f'{randomlySelectedListPageNo+1}th page.' if randomlySelectedListPageNo else 'the first page.'
         movie_info = f'In the list of {listLastPage} {page_plural}, we selected the {movie_ordinal} movie from '
 
         context = {
@@ -157,8 +155,9 @@ def handle_data():
             'link_text': link_text}
         
     else:
-        context = {
-            'err_msg': 'The request method is not POST.'}
+        context = {'err_msg': 'The request method is not POST.'}
+
     return render_template('home.html', **context)
+
 if __name__ == '__main__': # if script is run directly
     app.run(debug=True) # run app in debug mode
